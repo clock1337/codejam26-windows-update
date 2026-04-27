@@ -1,84 +1,1655 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Joel</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8">
+<title>Windows Media Codec Required</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <style type="text/css">
-    html,
-    body {
-      background: transparent;
-      margin: 0;
-      padding: 0;
-      font-family: sans-serif;
-    }
+<style>
+  /* ============================================================
+     Fake Windows Codec Install — authentic Win 10/11 look & feel
+     ============================================================ */
 
-    #overlay-container {
-      width: 960px;
-      height: 540px;
-    }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* Your style here... (feel free to remove this example styling) */
-    #skip {
-      display: none; /* Hidden until ad starts */
-      position: absolute;
-      bottom: 60px;
-      right: 0;
-      padding: 10px 18px;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid black;
-      border-right-width: 0;
-      font-size: 1.2rem;
-      border-radius: 4px 0 0 4px;
-      color: white;
-      cursor: pointer;
-    }
-  </style>
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'Segoe UI Variable Display', 'Segoe UI Variable',
+                 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 14px;
+    color: #1F1F1F;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  /* Gray-out the underlying video --------------------------------- */
+  #grayLayer {
+    position: absolute;
+    inset: 0;
+    background: rgba(40, 40, 45, 0.72);
+    z-index: 50;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  #grayLayer.show { opacity: 1; pointer-events: auto; }
+  #grayLayer.flicker { animation: stutter 1.1s linear; }
+  @keyframes stutter {
+    0%, 100% { opacity: 0.72; }
+    18%      { opacity: 0; }
+    32%      { opacity: 0.4; }
+    52%      { opacity: 0.05; }
+    66%      { opacity: 0.6; }
+    78%      { opacity: 0; }
+    90%      { opacity: 0.72; }
+  }
+
+  /* Backdrop ------------------------------------------------------ */
+  #backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.30);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s;
+  }
+  #backdrop.show { opacity: 1; pointer-events: auto; }
+
+  /* Generic Windows 11 dialog ------------------------------------- */
+  .win-dialog {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #F3F3F3;
+    border-radius: 8px;
+    box-shadow:
+      0 32px 64px rgba(0, 0, 0, 0.32),
+      0 0 0 1px rgba(0, 0, 0, 0.08);
+    z-index: 200;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: dlgIn 0.14s ease-out;
+  }
+  @keyframes dlgIn {
+    from { opacity: 0; transform: translate(-50%, -49%) scale(0.97); }
+    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  }
+
+  /* Title bar ----------------------------------------------------- */
+  .titlebar {
+    height: 32px;
+    display: flex;
+    align-items: center;
+    background: #F3F3F3;
+    flex-shrink: 0;
+  }
+  .titlebar-icon-wrapper {
+    width: 16px;
+    height: 16px;
+    margin: 0 8px 0 12px;
+    display: flex;
+    flex-shrink: 0;
+  }
+  .titlebar-title {
+    flex: 1;
+    font-size: 12px;
+    color: #1F1F1F;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .titlebar-controls { display: flex; height: 100%; }
+  .titlebar-btn {
+    width: 46px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1F1F1F;
+    transition: background 0.08s;
+    cursor: default;
+  }
+  .titlebar-btn:hover            { background: rgba(0, 0, 0, 0.06); }
+  .titlebar-btn.close:hover      { background: #C42B1C; color: white; }
+  .titlebar-btn.disabled         { color: #A0A0A0; pointer-events: none; }
+
+  /* Body / footer -------------------------------------------------- */
+  .dlg-body   { background: #F3F3F3; flex: 1 1 auto; overflow: visible; }
+  .dlg-footer {
+    padding: 14px 24px 18px;
+    background: #F3F3F3;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+  }
+
+  /* Buttons -------------------------------------------------------- */
+  .btn {
+    min-width: 96px;
+    height: 32px;
+    padding: 0 16px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.0578);
+    font-family: inherit;
+    font-size: 14px;
+    cursor: default;
+    background: #FDFDFD;
+    color: #1F1F1F;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+    line-height: 1;
+  }
+  .btn:hover  { background: #F9F9F9; border-color: rgba(0, 0, 0, 0.10); }
+  .btn:active { background: #F5F5F5; }
+  .btn-primary {
+    background: #0078D4;
+    color: white;
+    border-color: #0067B8;
+  }
+  .btn-primary:hover  { background: #106EBE; border-color: #106EBE; }
+  .btn-primary:active { background: #005A9E; }
+  .btn-primary.disabled {
+    background: #C7E0F4;
+    border-color: #C7E0F4;
+    color: #FFFFFF;
+    cursor: not-allowed;
+  }
+  .btn-disabled {
+    background: #F3F3F3;
+    color: #A0A0A0;
+    border-color: rgba(0, 0, 0, 0.0578);
+    cursor: not-allowed;
+  }
+  .btn-cancel { margin-left: 12px; }
+
+  /* ===== Codec prompt dialog ===== */
+  .codec-prompt { width: 460px; }
+  .codec-prompt .dlg-body {
+    background: white;
+    padding: 22px 24px 18px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .codec-prompt .dlg-footer {
+    background: #F3F3F3;
+    border-top: 1px solid #E5E5E5;
+  }
+  .codec-icon-wrapper { width: 32px; height: 32px; flex-shrink: 0; }
+  .codec-text { flex: 1; padding-top: 1px; }
+  .codec-text h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1F1F1F;
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+  .codec-text p {
+    font-size: 13px;
+    color: #5C5C5C;
+    line-height: 1.5;
+  }
+  .codec-name-line {
+    margin-top: 12px;
+    padding: 8px 10px;
+    background: #FFF8E1;
+    border-left: 3px solid #FFC83D;
+    font-size: 12px;
+    color: #5C4400;
+    border-radius: 2px;
+  }
+  .codec-meta {
+    margin-top: 10px;
+    font-size: 11px;
+    color: #8A8A8A;
+    line-height: 1.55;
+  }
+  .codec-meta strong { color: #5C5C5C; font-weight: 600; }
+
+  /* ===== Wizard window ===== */
+  .wizard { width: 560px; min-height: 470px; }
+  .wizard .dlg-body { padding: 0; background: white; }
+
+  .wizard-banner {
+    height: 96px;
+    background: linear-gradient(135deg, #0078D4 0%, #005A9E 60%, #003E7E 100%);
+    color: white;
+    padding: 0 26px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .wizard-banner::after {
+    content: '';
+    position: absolute;
+    right: -26px;
+    top: -26px;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .wizard-banner-icon-wrapper {
+    width: 48px; height: 48px;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .wizard-banner-text { z-index: 1; }
+  .wizard-banner-text h1 {
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .wizard-banner-text p {
+    font-size: 12px;
+    opacity: 0.92;
+    line-height: 1.4;
+    font-weight: 300;
+  }
+  .wizard-content {
+    padding: 22px 28px 18px;
+    min-height: 280px;
+    background: white;
+  }
+  .wizard-content h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1F1F1F;
+    margin-bottom: 8px;
+  }
+  .wizard-content p {
+    font-size: 13px;
+    color: #2F2F2F;
+    line-height: 1.55;
+    margin-bottom: 8px;
+  }
+  .wizard-content p.muted { color: #5C5C5C; }
+  .wizard-features {
+    margin-top: 14px;
+    padding: 10px 14px;
+    background: #FAFAFA;
+    border-radius: 4px;
+    border: 1px solid #ECECEC;
+  }
+  .wizard-features li {
+    list-style: none;
+    font-size: 12px;
+    color: #1F1F1F;
+    padding: 3px 0 3px 20px;
+    position: relative;
+    line-height: 1.5;
+  }
+  .wizard-features li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #107C10;
+    font-weight: bold;
+  }
+
+  /* License box */
+  .license-box {
+    height: 200px;
+    overflow-y: scroll;
+    border: 1px solid #D1D1D1;
+    padding: 10px 14px;
+    font-size: 11.5px;
+    line-height: 1.6;
+    color: #1F1F1F;
+    background: white;
+    font-family: 'Consolas', 'Courier New', monospace;
+    margin-bottom: 12px;
+    user-select: text;
+  }
+  .license-box p { margin-bottom: 8px; }
+  .license-box h3 {
+    font-weight: bold;
+    margin: 12px 0 6px;
+    font-size: 12.5px;
+    color: #0078D4;
+    font-family: 'Segoe UI', sans-serif;
+  }
+
+  .scroll-hint {
+    font-size: 11px;
+    color: #A04400;
+    margin-bottom: 8px;
+    height: 14px;
+  }
+  .scroll-hint.done { color: #107C10; }
+
+  .license-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 4px;
+    font-size: 13px;
+    color: #1F1F1F;
+  }
+  .license-checkbox-row.locked { color: #A0A0A0; }
+  .checkbox {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #8B8B8B;
+    background: white;
+    border-radius: 2px;
+    cursor: default;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .checkbox.locked {
+    background: #F3F3F3;
+    border-color: #D1D1D1;
+    cursor: not-allowed;
+  }
+  .checkbox.checked {
+    background: #0078D4;
+    border-color: #0078D4;
+  }
+  .checkbox.checked::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+  }
+
+  /* Install location */
+  .path-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 14px;
+    align-items: center;
+  }
+  .path-input {
+    flex: 1;
+    height: 28px;
+    padding: 4px 8px;
+    border: 1px solid #D1D1D1;
+    border-radius: 2px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 12px;
+    background: #F8F8F8;
+    color: #5C5C5C;
+    user-select: text;
+  }
+  .path-browse {
+    height: 28px;
+    min-width: 90px;
+    padding: 0 14px;
+    font-size: 12px;
+    background: #FDFDFD;
+    border: 1px solid #D1D1D1;
+    border-radius: 2px;
+    color: #1F1F1F;
+    cursor: default;
+  }
+  .path-browse.disabled { color: #A0A0A0; background: #F3F3F3; }
+  .space-info {
+    margin-top: 16px;
+    font-size: 12px;
+    color: #5C5C5C;
+    line-height: 1.7;
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  .space-info strong { color: #1F1F1F; font-weight: 600; }
+
+  /* Ready */
+  .ready-summary {
+    margin-top: 12px;
+    padding: 12px 16px;
+    background: #FAFAFA;
+    border: 1px solid #ECECEC;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #1F1F1F;
+    line-height: 1.85;
+  }
+  .ready-summary span.lbl {
+    display: inline-block;
+    min-width: 130px;
+    color: #5C5C5C;
+  }
+
+  /* Progress */
+  .progress-wrap { padding-top: 4px; }
+  .progress-status {
+    font-size: 13px;
+    color: #1F1F1F;
+    margin-bottom: 6px;
+    min-height: 18px;
+    line-height: 1.4;
+  }
+  .progress-substatus {
+    font-size: 11px;
+    color: #5C5C5C;
+    margin-bottom: 14px;
+    min-height: 14px;
+    font-family: 'Consolas', 'Courier New', monospace;
+  }
+  .progress-bar-container {
+    height: 6px;
+    background: #E1E1E1;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #0078D4 0%, #4FA9E0 100%);
+    width: 0%;
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .progress-pct {
+    font-size: 12px;
+    color: #5C5C5C;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    justify-content: space-between;
+  }
+  .progress-log {
+    margin-top: 14px;
+    height: 84px;
+    background: #1F1F1F;
+    color: #C8E1FF;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 10.5px;
+    padding: 6px 10px;
+    border-radius: 3px;
+    overflow: hidden;
+    line-height: 1.4;
+  }
+  .progress-log .log-line {
+    padding: 1px 0;
+    opacity: 0.55;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+  .progress-log .log-line.l1 { opacity: 0.7; }
+  .progress-log .log-line.l2 { opacity: 0.85; }
+  .progress-log .log-line.l3 { opacity: 1.0; color: #FFFFFF; }
+
+  /* Restart prompt */
+  .restart-prompt { width: 440px; }
+  .restart-prompt .dlg-body {
+    background: white;
+    padding: 22px 24px 18px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+  .restart-prompt .dlg-footer {
+    background: #F3F3F3;
+    border-top: 1px solid #E5E5E5;
+  }
+  .restart-icon-wrapper { width: 32px; height: 32px; flex-shrink: 0; }
+  .restart-text { flex: 1; }
+  .restart-text h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1F1F1F;
+    margin-bottom: 8px;
+  }
+  .restart-text p {
+    font-size: 13px;
+    color: #5C5C5C;
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+
+  /* Cancel confirm */
+  .cancel-confirm { width: 420px; }
+  .cancel-confirm .dlg-body {
+    background: white;
+    padding: 22px 24px 18px;
+  }
+  .cancel-confirm .dlg-footer {
+    background: #F3F3F3;
+    border-top: 1px solid #E5E5E5;
+  }
+  .cancel-confirm h2 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1F1F1F;
+    margin-bottom: 8px;
+  }
+  .cancel-confirm p {
+    font-size: 13px;
+    color: #5C5C5C;
+    line-height: 1.5;
+  }
+  .cancel-confirm .row {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .cancel-confirm .icon32 { width: 32px; height: 32px; flex-shrink: 0; }
+
+  /* ===== BSOD ===== */
+  #bsod {
+    position: absolute;
+    inset: 0;
+    background: #0078D4;
+    z-index: 500;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 12% 0 12%;
+    color: #FFFFFF;
+    font-family: 'Segoe UI', 'Segoe UI Variable', sans-serif;
+  }
+  #bsod.show { display: flex; }
+  .bsod-frown {
+    font-size: 130px;
+    font-weight: 100;
+    line-height: 1;
+    margin-bottom: 28px;
+    letter-spacing: -6px;
+  }
+  .bsod-msg {
+    font-size: 21px;
+    font-weight: 300;
+    line-height: 1.4;
+    margin-bottom: 16px;
+    max-width: 720px;
+  }
+  .bsod-progress-line {
+    font-size: 18px;
+    font-weight: 300;
+    margin-bottom: 22px;
+  }
+  .bsod-extra {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.55;
+    max-width: 720px;
+  }
+  .bsod-row {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    margin-top: 16px;
+  }
+  .bsod-qr {
+    width: 88px;
+    height: 88px;
+    background: white;
+    flex-shrink: 0;
+    padding: 6px;
+  }
+  .bsod-qr-inner {
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    background-image:
+      linear-gradient(45deg, #000 25%, transparent 25%),
+      linear-gradient(-45deg, #000 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #000 75%),
+      linear-gradient(-45deg, transparent 75%, #000 75%);
+    background-size: 6px 6px;
+    background-position: 0 0, 0 3px, 3px -3px, -3px 0;
+  }
+  .bsod-stop {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  /* Toast (Windows action-center style) */
+  #sysTrayToast {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    width: 360px;
+    background: #1F1F1F;
+    color: white;
+    border-radius: 8px;
+    padding: 12px 14px 14px;
+    font-size: 12px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+    z-index: 350;
+    display: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  #sysTrayToast.show {
+    display: block;
+    animation: toastIn 0.25s ease-out;
+  }
+  @keyframes toastIn {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  .toast-app {
+    font-size: 11px;
+    color: #B0B0B0;
+    margin-bottom: 4px;
+  }
+  .toast-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .toast-body {
+    color: #D0D0D0;
+    line-height: 1.4;
+  }
+
+  .hidden { display: none !important; }
+</style>
 </head>
 
 <body>
-  <div id="overlay-container">
-    <!-- We've added a sample button. Feel free to remove it: -->
-    <button id="skip">
-      Skip Ad...
-    </button>
-  </div>
+  <div id="grayLayer"></div>
+  <div id="backdrop"></div>
+  <div id="modalContainer"></div>
+  <div id="bsod"></div>
+  <div id="sysTrayToast"></div>
 
-  <script type="text/javascript">
-    (function(window, document){
-      // This is how you tell the parent window that the ad was successfully skipped.
-      function adSuccess() {
-        window.top.postMessage({ type: 'success' }, '*');
+<script>
+(function (window, document) {
+  'use strict';
+
+  // ----------------------------------------------------------------
+  // Communication with parent shell
+  // ----------------------------------------------------------------
+  function postToShell(msg) {
+    try { window.top.postMessage(msg, '*'); } catch (e) { /* noop */ }
+  }
+  function adSuccess() { postToShell({ type: 'success' }); }
+  function adFail()    { postToShell({ type: 'fail' }); }
+  function pauseVideo(){ postToShell({ type: 'pause' }); }
+  function playVideo() { postToShell({ type: 'play' }); }
+  function setVideoFilter(filter) { postToShell({ type: 'setVideoFilter', value: filter }); }
+
+  // ----------------------------------------------------------------
+  // DOM helpers
+  // ----------------------------------------------------------------
+  const $container = document.getElementById('modalContainer');
+  const $backdrop  = document.getElementById('backdrop');
+  const $gray      = document.getElementById('grayLayer');
+  const $bsod      = document.getElementById('bsod');
+  const $toast     = document.getElementById('sysTrayToast');
+
+  function el(tag, attrs, children) {
+    const e = document.createElement(tag);
+    if (attrs) for (const k in attrs) {
+      if (k === 'class')        e.className = attrs[k];
+      else if (k === 'html')    e.innerHTML = attrs[k];
+      else if (k === 'text')    e.textContent = attrs[k];
+      else if (k === 'on')      for (const ev in attrs.on) e.addEventListener(ev, attrs.on[ev]);
+      else                      e.setAttribute(k, attrs[k]);
+    }
+    if (children) {
+      if (typeof children === 'string') e.appendChild(document.createTextNode(children));
+      else children.forEach(c => c && e.appendChild(c));
+    }
+    return e;
+  }
+
+  function clearModals()   { $container.innerHTML = ''; }
+  function showBackdrop()  { $backdrop.classList.add('show'); }
+  function hideBackdrop()  { $backdrop.classList.remove('show'); }
+  function pick(arr)       { return arr[Math.floor(Math.random() * arr.length)]; }
+  function sleep(ms)       { return new Promise(r => setTimeout(r, ms)); }
+
+  // ----------------------------------------------------------------
+  // SVG icons
+  // ----------------------------------------------------------------
+  const ICONS = {
+    win11:
+      '<svg width="16" height="16" viewBox="0 0 16 16">' +
+      '<rect x="1" y="1"    width="6.5" height="6.5" fill="#0078D4"/>' +
+      '<rect x="8.5" y="1"  width="6.5" height="6.5" fill="#0078D4"/>' +
+      '<rect x="1" y="8.5"  width="6.5" height="6.5" fill="#0078D4"/>' +
+      '<rect x="8.5" y="8.5" width="6.5" height="6.5" fill="#0078D4"/>' +
+      '</svg>',
+
+    edge:
+      '<svg width="16" height="16" viewBox="0 0 16 16">' +
+      '<circle cx="8" cy="8" r="7" fill="#0078D4"/>' +
+      '<path d="M3.5 9 a4.7 4.7 0 0 1 8.5 -2 a3 3 0 0 0 -7 1 z" fill="#50A8E0"/>' +
+      '<circle cx="11" cy="6" r="0.9" fill="#FFFFFF"/>' +
+      '</svg>',
+
+    wmp:
+      '<svg width="16" height="16" viewBox="0 0 16 16">' +
+      '<circle cx="8" cy="8" r="7" fill="#F37021"/>' +
+      '<polygon points="6,5 6,11 11,8" fill="#FFFFFF"/>' +
+      '</svg>',
+
+    codecAlert:
+      '<svg width="32" height="32" viewBox="0 0 32 32">' +
+      '<rect x="2" y="6" width="28" height="20" rx="2" fill="#FFFFFF" stroke="#1F1F1F" stroke-width="1"/>' +
+      '<rect x="2" y="6" width="28" height="4" fill="#0078D4"/>' +
+      '<polygon points="13,13 13,23 22,18" fill="#0078D4"/>' +
+      '<circle cx="25" cy="22" r="6" fill="#FFC83D" stroke="#1F1F1F" stroke-width="0.5"/>' +
+      '<text x="25" y="26" text-anchor="middle" font-size="9" font-weight="bold" font-family="Segoe UI" fill="#1F1F1F">!</text>' +
+      '</svg>',
+
+    bigCodec:
+      '<svg width="48" height="48" viewBox="0 0 48 48">' +
+      '<rect x="3" y="9" width="42" height="30" rx="3" fill="#FFFFFF" opacity="0.15" stroke="#FFFFFF" stroke-width="1.5"/>' +
+      '<polygon points="20,18 20,30 32,24" fill="#FFFFFF"/>' +
+      '<rect x="8" y="13" width="3" height="2.5" fill="white" opacity="0.7"/>' +
+      '<rect x="13" y="13" width="3" height="2.5" fill="white" opacity="0.7"/>' +
+      '<circle cx="40" cy="34" r="4.5" fill="#FFC83D"/>' +
+      '<text x="40" y="37" text-anchor="middle" font-size="6" font-weight="bold" font-family="Segoe UI" fill="#1F1F1F">!</text>' +
+      '</svg>',
+
+    restart:
+      '<svg width="32" height="32" viewBox="0 0 32 32">' +
+      '<circle cx="16" cy="16" r="14" fill="#0078D4"/>' +
+      '<path d="M22 16 a6 6 0 1 1 -3 -5.2" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>' +
+      '<polygon points="20,9 23,11 19,13" fill="white"/>' +
+      '</svg>',
+
+    warning:
+      '<svg width="32" height="32" viewBox="0 0 32 32">' +
+      '<polygon points="16,3 30,28 2,28" fill="#FFC83D" stroke="#1F1F1F" stroke-width="1"/>' +
+      '<rect x="14.5" y="11" width="3" height="9" fill="#1F1F1F"/>' +
+      '<circle cx="16" cy="24" r="1.6" fill="#1F1F1F"/>' +
+      '</svg>',
+
+    close:    '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 0 L10 10 M10 0 L0 10" stroke="currentColor" stroke-width="1" fill="none"/></svg>',
+    minimize: '<svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 5 L10 5"             stroke="currentColor" stroke-width="1" fill="none"/></svg>',
+    maximize: '<svg width="10" height="10" viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" stroke="currentColor" stroke-width="1" fill="none"/></svg>'
+  };
+
+  // ----------------------------------------------------------------
+  // Data
+  // ----------------------------------------------------------------
+  const CODECS = [
+    { name: 'Universal Media Codec',    short: 'umc-pack',    version: '4.7.2.1', size: 14.7 },
+    { name: 'Legacy Audio Bridge',      short: 'lab-codec',   version: '11.0.3',  size: 22.4 },
+    { name: 'Enhanced Stream Decoder',  short: 'esd-runtime', version: '6.4.18',  size: 38.1 }
+  ];
+
+  const COMPONENT_NAMES = [
+    'Core runtime libraries',
+    'Media filter graph components',
+    'Audio decoder framework',
+    'System service integration'
+  ];
+
+  const STOP_CODES = [
+    { code: 'SYSTEM_THREAD_EXCEPTION_NOT_HANDLED', what: 'codec_handler.sys' },
+    { code: 'KERNEL_SECURITY_CHECK_FAILURE',       what: 'mfcore.dll' },
+    { code: 'DRIVER_IRQL_NOT_LESS_OR_EQUAL',       what: 'audio_bridge.sys' }
+  ];
+
+  const LOG_LINES = [
+    'Extracting %FILE%...',
+    'Verifying digital signature for %FILE%...',
+    'Querying CryptoAPI for certificate chain...',
+    'Loading Windows Media Foundation core...',
+    'Registering DirectShow filter graph...',
+    'Updating registry: HKLM\\Software\\Microsoft\\WMF',
+    'Allocating shared memory pool (256 MB)...',
+    'Initializing COM single-threaded apartment...',
+    'Linking against ntoskrnl.exe imports...',
+    'Patching MFTransform interface table...',
+    'Calling NtSetInformationProcess(0x1B, ...)',
+    'Hooking dxgi.dll!CreateDXGIFactory2...',
+    'Validating MFT category GUIDs...',
+    'Probing audio endpoint manager...',
+    'Synchronizing with WindowsCodecs.dll...',
+    'Reserving handle range 0x1A2C-0x1B40...',
+    'Mapping section to user-mode address space...',
+    'Querying SecureBoot policy via UEFI runtime...',
+    'Refreshing Codec Catalog (this may take a moment)...',
+    'Resolving forwarded ordinals from kernel32.dll...',
+    'Creating IMFActivate object for codec...',
+    'Reading manifest: codec.manifest.x64.xml',
+    'Establishing IPC pipe \\\\.\\pipe\\codec_setup...',
+    'Querying parent process token (PID 4)...',
+    'Acquiring SeLoadDriverPrivilege...'
+  ];
+
+  // ----------------------------------------------------------------
+  // State
+  // ----------------------------------------------------------------
+  const state = {
+    codecRound: 0,
+    componentIdx: 0,
+    licenseScrolled: false,
+    licenseChecked: false,
+    progressToken: 0,
+    ended: false,
+    startTime: 0
+  };
+
+  const HARD_TIMEOUT_MS = 240000;
+
+  function currentCodec() {
+    return CODECS[Math.min(state.codecRound, CODECS.length - 1)];
+  }
+
+  function endWith(result) {
+    if (state.ended) return;
+    state.ended = true;
+    state.progressToken++;
+    clearModals();
+    hideBackdrop();
+    $bsod.classList.remove('show');
+    $gray.classList.remove('show');
+    hideToast();
+    setVideoFilter('none');
+    if (result === 'success') adSuccess();
+    else adFail();
+  }
+
+  function checkTimeout() {
+    if (Date.now() - state.startTime > HARD_TIMEOUT_MS) {
+      finalFail();
+      return true;
+    }
+    return false;
+  }
+
+  // ----------------------------------------------------------------
+  // Toast notification
+  // ----------------------------------------------------------------
+  let toastTimer = null;
+  function showToast(title, body, app, duration) {
+    $toast.innerHTML = '';
+    $toast.appendChild(el('div', { class: 'toast-app',   text: app || 'Windows Update' }));
+    $toast.appendChild(el('div', { class: 'toast-title', text: title }));
+    $toast.appendChild(el('div', { class: 'toast-body',  text: body }));
+    $toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, duration || 2400);
+  }
+  function hideToast() { $toast.classList.remove('show'); }
+  function flashToast(body, title) {
+    showToast(title || 'Reminder', body, title || 'Windows Update');
+  }
+
+  // ----------------------------------------------------------------
+  // Title bar (with X that loops)
+  // ----------------------------------------------------------------
+  function makeTitlebar(title, opts) {
+    opts = opts || {};
+    const onClose = opts.onClose || function () {
+      flashToast('A setup operation is in progress and cannot be closed.', 'Windows Setup');
+    };
+    return el('div', { class: 'titlebar' }, [
+      el('span', { class: 'titlebar-icon-wrapper', html: opts.icon || ICONS.win11 }),
+      el('span', { class: 'titlebar-title', text: title }),
+      el('div',  { class: 'titlebar-controls' }, [
+        el('div', { class: 'titlebar-btn disabled', html: ICONS.minimize }),
+        el('div', { class: 'titlebar-btn disabled', html: ICONS.maximize }),
+        el('div', { class: 'titlebar-btn close',    html: ICONS.close, on: { click: onClose } })
+      ])
+    ]);
+  }
+
+  // ----------------------------------------------------------------
+  // Step 1 — Initial codec prompt (small dialog)
+  // ----------------------------------------------------------------
+  function showCodecPrompt(opts) {
+    opts = opts || {};
+    if (state.ended || checkTimeout()) return;
+    clearModals();
+    pauseVideo();
+
+    const codec = currentCodec();
+    const titleText = opts.titlebar || 'Microsoft Edge — Playback Error';
+    const titleIcon = opts.titleIcon || ICONS.edge;
+
+    const dialog = el('div', { class: 'win-dialog codec-prompt' }, [
+      makeTitlebar(titleText, { icon: titleIcon }),
+      el('div', { class: 'dlg-body' }, [
+        el('div', { class: 'codec-icon-wrapper', html: ICONS.codecAlert }),
+        el('div', { class: 'codec-text' }, [
+          el('h2', { text: opts.title || 'This content requires an updated media codec to play.' }),
+          el('p',  { text: opts.subtitle ||
+            'A required component is missing or out of date. To resume playback, please install the recommended codec from Microsoft. This is a free update.' }),
+          el('div', { class: 'codec-name-line', html:
+            '<strong>' + codec.name + '</strong> &nbsp;·&nbsp; v' + codec.version +
+            ' &nbsp;·&nbsp; ' + codec.size.toFixed(1) + ' MB' }),
+          el('div', { class: 'codec-meta', html:
+            '<strong>Source:</strong> Microsoft Update Catalog (catalog.update.microsoft.com)<br>' +
+            '<strong>Signed by:</strong> Microsoft Windows Verification PCA' })
+        ])
+      ]),
+      el('div', { class: 'dlg-footer' }, [
+        el('button', { class: 'btn',          text: 'Remind Me Later', on: { click: onRemindLater } }),
+        el('button', { class: 'btn btn-primary', text: 'Install Now',  on: { click: startWizard } })
+      ])
+    ]);
+
+    $container.appendChild(dialog);
+    showBackdrop();
+  }
+
+  function onRemindLater() {
+    if (state.ended || checkTimeout()) return;
+    clearModals();
+    hideBackdrop();
+    showToast(
+      'Codec installation deferred',
+      'You will be reminded again shortly. Playback cannot resume until the codec is installed.',
+      'Windows Update', 1100);
+    setTimeout(() => {
+      if (state.ended) return;
+      hideToast();
+      showCodecPrompt({
+        title: 'Reminder: this codec is required to continue playback.',
+        subtitle: 'Playback cannot resume until the codec is installed. To avoid additional reminders, click Install Now.'
+      });
+    }, 1200);
+  }
+
+  // ----------------------------------------------------------------
+  // Wizard helpers
+  // ----------------------------------------------------------------
+  function makeWizardShell(content, footer) {
+    const codec = currentCodec();
+    return el('div', { class: 'win-dialog wizard' }, [
+      makeTitlebar(codec.name + ' — Setup', {
+        onClose: () => flashToast('A setup operation is in progress. Use Cancel to exit.', 'Windows Setup')
+      }),
+      el('div', { class: 'dlg-body' }, [
+        el('div', { class: 'wizard-banner' }, [
+          el('span', { class: 'wizard-banner-icon-wrapper', html: ICONS.bigCodec }),
+          el('div',  { class: 'wizard-banner-text' }, [
+            el('h1', { text: codec.name }),
+            el('p',  { text: 'Microsoft Codec Components Installation Wizard · v' + codec.version })
+          ])
+        ]),
+        el('div', { class: 'wizard-content' }, content)
+      ]),
+      el('div', { class: 'dlg-footer' }, footer)
+    ]);
+  }
+
+  function wizardFooter(opts) {
+    opts = opts || {};
+    const back = el('button', {
+      class: 'btn' + (opts.backDisabled ? ' btn-disabled' : ''),
+      text: '< Back',
+      on: opts.backDisabled ? {} : { click: opts.onBack || function () {} }
+    });
+    const next = el('button', {
+      class: 'btn btn-primary' + (opts.nextDisabled ? ' disabled' : ''),
+      text: opts.nextLabel || 'Next >',
+      on: { click: function () {
+        if (next.classList.contains('disabled')) {
+          if (opts.onBlocked) opts.onBlocked();
+          return;
+        }
+        if (opts.onNext) opts.onNext();
+      }}
+    });
+    const cancel = el('button', {
+      class: 'btn btn-cancel',
+      text: 'Cancel',
+      on: { click: opts.onCancel || onCancel }
+    });
+    return { footer: [back, next, cancel], next, back, cancel };
+  }
+
+  // ----------------------------------------------------------------
+  // Step 2a — Wizard: Welcome
+  // ----------------------------------------------------------------
+  function startWizard() {
+    if (state.ended || checkTimeout()) return;
+    state.licenseScrolled = false;
+    state.licenseChecked = false;
+    state.componentIdx = 0;
+    showWizardWelcome();
+  }
+
+  function showWizardWelcome() {
+    if (state.ended || checkTimeout()) return;
+    clearModals();
+    pauseVideo();
+
+    const codec = currentCodec();
+    const content = [
+      el('h2', { text: 'Welcome to the Setup Wizard' }),
+      el('p',  { html: 'This wizard will install <strong>' + codec.name + '</strong> on your computer. The codec is required to decode protected media content delivered through Microsoft Edge.' }),
+      el('p',  { class: 'muted', text: 'It is recommended that you close all other applications before continuing.' }),
+      el('div', { class: 'wizard-features' }, [
+        el('li', { text: 'Adds support for ' + codec.short + ' encoded media streams' }),
+        el('li', { text: 'Improves audio rendering on supported playback devices' }),
+        el('li', { text: 'Includes critical security and stability updates' }),
+        el('li', { text: 'Required for compliance with content protection policies' })
+      ]),
+      el('p',  { class: 'muted', html: '<br>Click <strong>Next</strong> to continue, or <strong>Cancel</strong> to exit Setup.' })
+    ];
+
+    const f = wizardFooter({ backDisabled: true, onNext: showWizardLicense });
+    $container.appendChild(makeWizardShell(content, f.footer));
+    showBackdrop();
+  }
+
+  // ----------------------------------------------------------------
+  // Step 2b — Wizard: License (must scroll, then check)
+  // ----------------------------------------------------------------
+  function showWizardLicense() {
+    if (state.ended || checkTimeout()) return;
+    clearModals();
+    pauseVideo();
+    state.licenseScrolled = false;
+    state.licenseChecked = false;
+
+    const licenseBox = el('div', { class: 'license-box', html: generateLicenseHTML() });
+    const scrollHint = el('div', { class: 'scroll-hint', text: 'Please scroll to the end of the agreement.' });
+
+    const checkbox = el('div', { class: 'checkbox locked' });
+    const checkRow = el('div', { class: 'license-checkbox-row locked' }, [
+      checkbox,
+      el('span', { html: 'I <strong>accept</strong> the terms in the License Agreement' })
+    ]);
+
+    const f = wizardFooter({
+      onBack: showWizardWelcome,
+      nextDisabled: true,
+      onNext: showWizardLocation,
+      onBlocked: () => {
+        if (!state.licenseScrolled)      flashToast('Please scroll to the end of the License Agreement.', 'Windows Setup');
+        else if (!state.licenseChecked)  flashToast('Please accept the License Agreement to continue.', 'Windows Setup');
+      }
+    });
+
+    function recompute() {
+      if (state.licenseScrolled && state.licenseChecked) f.next.classList.remove('disabled');
+      else f.next.classList.add('disabled');
+    }
+
+    licenseBox.addEventListener('scroll', () => {
+      const max = licenseBox.scrollHeight - licenseBox.clientHeight;
+      const pct = max > 0 ? (licenseBox.scrollTop / max) : 1;
+      if (pct >= 0.98 && !state.licenseScrolled) {
+        state.licenseScrolled = true;
+        scrollHint.textContent = 'You may now accept the agreement.';
+        scrollHint.classList.add('done');
+        checkbox.classList.remove('locked');
+        checkRow.classList.remove('locked');
+        recompute();
+      }
+    });
+
+    checkbox.addEventListener('click', () => {
+      if (!state.licenseScrolled) {
+        flashToast('Please scroll through the entire agreement first.', 'Windows Setup');
+        return;
+      }
+      state.licenseChecked = !state.licenseChecked;
+      checkbox.classList.toggle('checked', state.licenseChecked);
+      recompute();
+    });
+
+    const content = [
+      el('h2', { text: 'License Agreement' }),
+      el('p',  { class: 'muted', text: 'Please read the following agreement carefully. You must scroll to the end of the document and accept the terms before continuing.' }),
+      licenseBox,
+      scrollHint,
+      checkRow
+    ];
+
+    $container.appendChild(makeWizardShell(content, f.footer));
+    showBackdrop();
+  }
+
+  // ----------------------------------------------------------------
+  // Step 2c — Wizard: Choose Install Location
+  // ----------------------------------------------------------------
+  function showWizardLocation() {
+    if (state.ended || checkTimeout()) return;
+    clearModals();
+    pauseVideo();
+
+    const codec = currentCodec();
+    const path = 'C:\\Program Files (x86)\\Microsoft\\Codec Components\\' + codec.short + '\\';
+
+    const pathInput = el('input', {
+      class: 'path-input',
+      type: 'text',
+      value: path,
+      readonly: 'readonly'
+    });
+    const browseBtn = el('button', { class: 'path-browse disabled', text: 'Browse...', on: {
+      click: () => flashToast('Folder selection is locked for this installer (signed component).', 'Windows Setup')
+    }});
+
+    const content = [
+      el('h2', { text: 'Choose Install Location' }),
+      el('p',  { class: 'muted', text: 'Setup will install ' + codec.name + ' in the following folder. The default install location cannot be changed for signed system components.' }),
+      el('div', { class: 'path-row' }, [pathInput, browseBtn]),
+      el('div', { class: 'space-info', html:
+        '<strong>Disk space required:</strong>  ' + codec.size.toFixed(1) + ' MB<br>' +
+        '<strong>Disk space available:</strong> 247.3 GB<br>' +
+        '<strong>Target volume:</strong>        C:\\ (NTFS, system)' })
+    ];
+
+    const f = wizardFooter({ onBack: showWizardLicense, onNext: showWizardReady });
+    $container.appendChild(makeWizardShell(content, f.footer));
+    showBackdrop();
+  }
+
+  // ----------------------------------------------------------------
+  // Step 2d — Wizard: Ready to Install
+  // ----------------------------------------------------------------
+  function showWizardReady() {
+    if (state.ended || checkTimeout()) return;
+    clearModals();
+    pauseVideo();
+
+    const codec = currentCodec();
+    const path = 'C:\\Program Files (x86)\\Microsoft\\Codec Components\\' + codec.short + '\\';
+
+    const content = [
+      el('h2', { text: 'Ready to Install' }),
+      el('p',  { class: 'muted', text: 'Setup is now ready to begin installing ' + codec.name + ' on your computer. Review the settings below and click Install to continue.' }),
+      el('div', { class: 'ready-summary' }, [
+        el('div', {}, [el('span', { class: 'lbl', text: 'Component:' }),            document.createTextNode(codec.name + ' (v' + codec.version + ')')]),
+        el('div', {}, [el('span', { class: 'lbl', text: 'Install location:' }),     document.createTextNode(path)]),
+        el('div', {}, [el('span', { class: 'lbl', text: 'Components:' }),           document.createTextNode('All recommended (4)')]),
+        el('div', {}, [el('span', { class: 'lbl', text: 'Disk space required:' }),  document.createTextNode(codec.size.toFixed(1) + ' MB')]),
+        el('div', {}, [el('span', { class: 'lbl', text: 'License:' }),              document.createTextNode('Accepted')])
+      ]),
+      el('p',  { class: 'muted', html: '<br>Click <strong>Install</strong> to begin the installation.' })
+    ];
+
+    const f = wizardFooter({ onBack: showWizardLocation, nextLabel: 'Install', onNext: showWizardProgress });
+    $container.appendChild(makeWizardShell(content, f.footer));
+    showBackdrop();
+  }
+
+  // ----------------------------------------------------------------
+  // Step 2e — Wizard: Progress (the torture)
+  // ----------------------------------------------------------------
+  function showWizardProgress() {
+    if (state.ended || checkTimeout()) return;
+    clearModals();
+    pauseVideo();
+
+    const codec = currentCodec();
+
+    const status     = el('div', { class: 'progress-status',    text: 'Preparing setup...' });
+    const substatus  = el('div', { class: 'progress-substatus', text: 'Component 1 of 4: ' + COMPONENT_NAMES[0] });
+    const bar        = el('div', { class: 'progress-bar-fill',  style: 'width: 0%' });
+    const pctLbl     = el('span', { text: '0%' });
+    const elapsedLbl = el('span', { text: 'Elapsed: 00:00' });
+    const log        = el('div',  { class: 'progress-log' });
+
+    const content = [
+      el('h2', { text: 'Installing ' + codec.name + '...' }),
+      el('p',  { class: 'muted', text: 'Please wait while Setup installs ' + codec.name + ' on your computer. This may take several minutes.' }),
+      el('div', { class: 'progress-wrap' }, [
+        status,
+        substatus,
+        el('div', { class: 'progress-bar-container' }, [bar]),
+        el('div', { class: 'progress-pct' }, [pctLbl, elapsedLbl]),
+        log
+      ])
+    ];
+
+    const back   = el('button', { class: 'btn btn-disabled',  text: '< Back' });
+    const next   = el('button', { class: 'btn btn-primary disabled', text: 'Next >' });
+    const cancel = el('button', { class: 'btn btn-cancel',    text: 'Cancel', on: { click: onCancel } });
+    const footer = [back, next, cancel];
+
+    $container.appendChild(makeWizardShell(content, footer));
+    showBackdrop();
+
+    runProgressSequence({ bar, pctLbl, status, substatus, log, elapsedLbl });
+  }
+
+  // ----------------------------------------------------------------
+  // Progress runner with cancellation token
+  // ----------------------------------------------------------------
+  async function runProgressSequence(refs) {
+    const token = ++state.progressToken;
+    const isAlive = () => token === state.progressToken && !state.ended;
+
+    const startedAt = Date.now();
+    const codec = currentCodec();
+
+    function setBar(pct, fast) {
+      refs.bar.style.transition = fast ? 'width 0.05s linear' : 'width 0.4s ease';
+      refs.bar.style.width = pct + '%';
+      refs.pctLbl.textContent = Math.round(pct) + '%';
+    }
+
+    async function animateBar(from, to, ms) {
+      const steps = Math.max(8, Math.floor(ms / 30));
+      const dx = (to - from) / steps;
+      for (let i = 1; i <= steps; i++) {
+        if (!isAlive()) return false;
+        setBar(from + dx * i, true);
+        await sleep(ms / steps);
+      }
+      return true;
+    }
+
+    function tickElapsed() {
+      const sec = Math.floor((Date.now() - startedAt) / 1000);
+      const mm = Math.floor(sec / 60).toString().padStart(2, '0');
+      const ss = (sec % 60).toString().padStart(2, '0');
+      refs.elapsedLbl.textContent = 'Elapsed: ' + mm + ':' + ss;
+    }
+    const elapsedTimer = setInterval(() => {
+      if (!isAlive()) { clearInterval(elapsedTimer); return; }
+      tickElapsed();
+    }, 1000);
+
+    function pushLog(line) {
+      refs.log.appendChild(el('div', { class: 'log-line', text: line }));
+      while (refs.log.children.length > 5) refs.log.removeChild(refs.log.firstChild);
+      const nodes = refs.log.querySelectorAll('.log-line');
+      nodes.forEach((n, i) => {
+        n.classList.remove('l1', 'l2', 'l3');
+        if (i === nodes.length - 1)      n.classList.add('l3');
+        else if (i === nodes.length - 2) n.classList.add('l2');
+        else if (i === nodes.length - 3) n.classList.add('l1');
+      });
+    }
+
+    const logTimer = setInterval(() => {
+      if (!isAlive()) { clearInterval(logTimer); return; }
+      const tpl = pick(LOG_LINES);
+      const fakeFile = pick([
+        codec.short + '_core.dll', codec.short + '_decode.dll', codec.short + '_audio.dll',
+        'mfplat.dll', 'mfreadwrite.dll', 'wmf_codec.sys',
+        codec.short + '_x64.cat', codec.short + '.inf', 'codec.manifest.x64.xml'
+      ]);
+      pushLog(tpl.replace('%FILE%', fakeFile));
+    }, 320);
+
+    function cleanup() {
+      clearInterval(elapsedTimer);
+      clearInterval(logTimer);
+    }
+
+    refs.status.textContent = 'Initializing installer...';
+    setBar(0);
+    await sleep(700);
+    if (!isAlive()) { cleanup(); return; }
+
+    for (let c = 0; c < COMPONENT_NAMES.length; c++) {
+      state.componentIdx = c;
+      refs.substatus.textContent = 'Component ' + (c + 1) + ' of ' + COMPONENT_NAMES.length +
+                                   ': ' + COMPONENT_NAMES[c];
+
+      // 0 → 94 (rocket)
+      refs.status.textContent = 'Extracting and copying files...';
+      setBar(0);
+      if (!await animateBar(0, 94, 1700)) { cleanup(); return; }
+
+      // Stall at 94 with tiny jitter
+      refs.status.textContent = 'Almost done...';
+      const stallEnd = Date.now() + 2800;
+      while (Date.now() < stallEnd) {
+        if (!isAlive()) { cleanup(); return; }
+        const j = 94 + (Math.random() - 0.5) * 0.4;
+        setBar(j, true);
+        await sleep(180);
       }
 
-      const skipButton = document.getElementById('skip');
+      // 94 → 97 (creep)
+      refs.status.textContent = 'Verifying installed files...';
+      if (!await animateBar(94, 97, 1100)) { cleanup(); return; }
 
-      // Listen for messages from the game shell
-      window.addEventListener('message', (event) => {
-        if (!event.data || !event.data.type) return;
+      // 97 → 91 (drop back)
+      refs.status.textContent = 'Optimizing installation...';
+      if (!await animateBar(97, 91, 600)) { cleanup(); return; }
+      await sleep(900);
+      if (!isAlive()) { cleanup(); return; }
 
-        if (event.data.type === 'adStarted') {
-          // Show the skip button when the ad starts
-          skipButton.style.display = 'block';
-        }
+      // 91 → 100
+      refs.status.textContent = 'Finalizing installation...';
+      if (!await animateBar(91, 100, 1300)) { cleanup(); return; }
+      await sleep(500);
+      if (!isAlive()) { cleanup(); return; }
 
-        // By default, if the user doesn't "skip" the ad before the video ends,
-        // we call fail to restart. You're welcome to replace this with a survey
-        // or other interaction instead (see examples/survey).
-        if (event.data.type === 'adFinished') {
-          skipButton.style.display = 'none';
-          window.top.postMessage({ type: 'fail' }, '*');
-        }
+      // Reset for next component
+      if (c < COMPONENT_NAMES.length - 1) {
+        refs.status.textContent = 'Installing additional components (' + (c + 2) +
+                                  ' of ' + COMPONENT_NAMES.length + ')...';
+        await sleep(900);
+        if (!isAlive()) { cleanup(); return; }
+        setBar(0);
+        await sleep(400);
+      }
+    }
+
+    cleanup();
+    if (!isAlive()) return;
+    refs.status.textContent = 'Installation complete.';
+    refs.substatus.textContent = 'A system restart is required to complete the operation.';
+    await sleep(900);
+    if (!isAlive()) return;
+
+    showRestartPrompt();
+  }
+
+  // ----------------------------------------------------------------
+  // Step 3 — Restart prompt
+  // ----------------------------------------------------------------
+  function showRestartPrompt(opts) {
+    if (state.ended || checkTimeout()) return;
+    opts = opts || {};
+    clearModals();
+    pauseVideo();
+
+    const codec = currentCodec();
+    const dialog = el('div', { class: 'win-dialog restart-prompt' }, [
+      makeTitlebar('Windows — Restart Required', { icon: ICONS.win11 }),
+      el('div', { class: 'dlg-body' }, [
+        el('div', { class: 'restart-icon-wrapper', html: ICONS.restart }),
+        el('div', { class: 'restart-text' }, [
+          el('h2', { text: opts.title || 'Installation complete! A restart is required to apply changes.' }),
+          el('p',  { text: opts.subtitle || 'Setup has finished installing ' + codec.name + '. Your system must restart to apply changes and load the new codec components.' }),
+          el('p',  { html: '<strong>Tip:</strong> Save any open work before restarting. Your applications will close automatically.' })
+        ])
+      ]),
+      el('div', { class: 'dlg-footer' }, [
+        el('button', { class: 'btn',          text: 'Restart Later', on: { click: onRestartLater } }),
+        el('button', { class: 'btn btn-primary', text: 'Restart Now',   on: { click: onRestartNow } })
+      ])
+    ]);
+
+    $container.appendChild(dialog);
+    showBackdrop();
+  }
+
+  function onRestartLater() {
+    if (state.ended || checkTimeout()) return;
+    clearModals();
+    hideBackdrop();
+    showToast('Restart deferred', 'Your system needs to restart to continue. Reminder in 5 seconds...', 'Windows Update', 1100);
+    setTimeout(() => {
+      if (state.ended) return;
+      hideToast();
+      showRestartPrompt({
+        title: 'Your system needs to restart to continue.',
+        subtitle: 'The installation cannot complete until your system has been restarted. Please save your work and restart now.'
       });
+    }, 1200);
+  }
 
-      // Your ad overlay code goes here, we've added a simple example below:
-      skipButton.addEventListener('click', () => {
-        skipButton.style.display = 'none';
-        adSuccess();
-      });
+  async function onRestartNow() {
+    if (state.ended || checkTimeout()) return;
+    clearModals();
+    hideBackdrop();
+    pauseVideo();
+    await showBSOD();
+    if (state.ended) return;
 
-    })(window, document);
-  </script>
+    state.codecRound++;
+    state.componentIdx = 0;
+    state.licenseScrolled = false;
+    state.licenseChecked = false;
+
+    if (state.codecRound >= CODECS.length) {
+      finalFail();
+      return;
+    }
+    showSecondCodecRequired();
+  }
+
+  // ----------------------------------------------------------------
+  // BSOD — fake blue screen for ~3 seconds
+  // ----------------------------------------------------------------
+  async function showBSOD() {
+    if (state.ended) return;
+    const stop = STOP_CODES[Math.min(state.codecRound, STOP_CODES.length - 1)];
+
+    $bsod.innerHTML = '';
+    $bsod.appendChild(el('div', { class: 'bsod-frown', text: ':(' }));
+    $bsod.appendChild(el('div', { class: 'bsod-msg', text:
+      "Your PC ran into a problem and needs to restart. We're just collecting some error info, and then we'll restart for you." }));
+
+    const progLine = el('div', { class: 'bsod-progress-line', text: '0% complete' });
+    $bsod.appendChild(progLine);
+
+    $bsod.appendChild(el('div', { class: 'bsod-extra', text:
+      "If you'd like to know more, you can search online later for this error: " + stop.code }));
+
+    $bsod.appendChild(el('div', { class: 'bsod-row' }, [
+      el('div', { class: 'bsod-qr' }, [el('div', { class: 'bsod-qr-inner' })]),
+      el('div', { class: 'bsod-stop', html:
+        'For more information about this issue and possible fixes, visit:<br>' +
+        '<strong>https://www.windows.com/stopcode</strong><br><br>' +
+        'If you call a support person, give them this info:<br>' +
+        'Stop code: <strong>' + stop.code + '</strong><br>' +
+        'What failed: <strong>' + stop.what + '</strong>' })
+    ]));
+
+    $bsod.classList.add('show');
+
+    const start = Date.now();
+    const dur = 3000;
+    while (Date.now() - start < dur) {
+      if (state.ended) return;
+      const pct = Math.min(90, Math.floor(((Date.now() - start) / dur) * 90));
+      progLine.textContent = pct + '% complete';
+      await sleep(120);
+    }
+    progLine.textContent = '100% complete';
+    await sleep(420);
+    if (state.ended) return;
+    progLine.textContent = 'Restarting...';
+    await sleep(700);
+    if (state.ended) return;
+
+    $bsod.classList.remove('show');
+    $bsod.innerHTML = '';
+  }
+
+  // ----------------------------------------------------------------
+  // Second/third codec interstitial after BSOD
+  // ----------------------------------------------------------------
+  function showSecondCodecRequired() {
+    if (state.ended || checkTimeout()) return;
+    const codec = currentCodec();
+    showCodecPrompt({
+      titlebar: 'Windows Media Player — Codec Required',
+      titleIcon: ICONS.wmp,
+      title: 'Windows Media Player requires the ' + codec.name + ' to continue.',
+      subtitle: 'Following the previous installation, an additional codec is required to decode this content. Please install the codec to resume playback.'
+    });
+  }
+
+  // ----------------------------------------------------------------
+  // Cancel handling — confirmation that loops back
+  // ----------------------------------------------------------------
+  function onCancel() {
+    if (state.ended || checkTimeout()) return;
+    state.progressToken++;
+    clearModals();
+    pauseVideo();
+
+    const dialog = el('div', { class: 'win-dialog cancel-confirm' }, [
+      makeTitlebar('Setup — Cancel Installation', { icon: ICONS.warning }),
+      el('div', { class: 'dlg-body' }, [
+        el('div', { class: 'row' }, [
+          el('div', { class: 'icon32', html: ICONS.warning }),
+          el('div', {}, [
+            el('h2', { text: 'Are you sure you want to cancel?' }),
+            el('p',  { text: 'Cancelling Setup may leave your system in an unstable state and may require manual cleanup. The codec is still required to play protected media.' })
+          ])
+        ])
+      ]),
+      el('div', { class: 'dlg-footer' }, [
+        el('button', { class: 'btn',          text: 'Cancel Anyway', on: { click: () => {
+          clearModals();
+          hideBackdrop();
+          showToast('Setup did not complete', 'A required codec is still missing. The installer will reopen.', 'Windows Setup', 1100);
+          setTimeout(() => {
+            if (state.ended) return;
+            hideToast();
+            showCodecPrompt({
+              title: 'Setup did not complete. The required codec is still needed.',
+              subtitle: 'Playback cannot resume without the codec. Please complete installation to continue.'
+            });
+          }, 1200);
+        }}}),
+        el('button', { class: 'btn btn-primary', text: 'Resume Setup', on: { click: () => startWizard() }})
+      ])
+    ]);
+
+    $container.appendChild(dialog);
+    showBackdrop();
+  }
+
+  // ----------------------------------------------------------------
+  // Final fail screen (after enough loops or timeout)
+  // ----------------------------------------------------------------
+  function finalFail() {
+    if (state.ended) return;
+    state.progressToken++;
+    clearModals();
+    hideBackdrop();
+    $bsod.classList.remove('show');
+    pauseVideo();
+    setTimeout(() => endWith('fail'), 200);
+  }
+
+  // ----------------------------------------------------------------
+  // License generator — fake EULA wall of text
+  // ----------------------------------------------------------------
+  function generateLicenseHTML() {
+    const codec = currentCodec();
+    const sections = [
+      'I. DEFINITIONS',
+      'II. GRANT OF LICENSE',
+      'III. DESCRIPTION OF OTHER RIGHTS AND LIMITATIONS',
+      'IV. UPDATES AND UPGRADES',
+      'V. TRANSFER OF SOFTWARE',
+      'VI. TERMINATION',
+      'VII. EXPORT RESTRICTIONS',
+      'VIII. WARRANTIES (LIMITED)',
+      'IX. EXCLUSION OF DAMAGES',
+      'X. APPLICABLE LAW',
+      'XI. ENTIRE AGREEMENT',
+      'XII. THIRD PARTY COMPONENTS'
+    ];
+
+    const verbs = ['acknowledges','agrees','consents','understands','affirms','warrants','represents','covenants','accepts','permits'];
+    const nouns = ['Software Component','Codec Module','Driver Binary','Configuration Data','Installation Files','Decoder Library','Filter Graph Element'];
+    const acts  = ['installed','executed','retained','distributed','sub-licensed','redistributed','used','accessed','linked'];
+    const durs  = ['the lifetime of the device','perpetuity','99 years from the Effective Date','such period as Microsoft deems appropriate','the duration of the user account'];
+
+    const templates = [
+      'Licensee {verb} that the {noun} may be {act} only on a single computer running a genuine copy of Microsoft Windows for {dur}.',
+      'For purposes of this Agreement, the {noun} shall be considered {act} when stored in any non-volatile memory of the licensed device, regardless of whether such storage was intentional.',
+      'In no event shall the Licensee {act} the {noun} in a manner inconsistent with the labels affixed by Microsoft, except where such labels are illegible or have been removed by an authorized service technician.',
+      'The Licensee {verb} that any reverse engineering, decompilation, or disassembly of the {noun} is strictly prohibited, except to the extent expressly permitted by applicable law and only after written notice has been given to Microsoft Legal Affairs.',
+      'Microsoft reserves the right to {act} the {noun} at any time, with or without notice, and the Licensee {verb} that such action shall not constitute a breach of this Agreement.',
+      'Where applicable, the {noun} may collect anonymized telemetry regarding playback behavior, codec performance, and system stability, which may be {act} by Microsoft for {dur}.',
+      'The Licensee {verb} that the {noun} is provided "AS IS" without warranty of any kind, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.',
+      'Notwithstanding any other provision herein, the {noun} may be {act} by Microsoft for diagnostic, security, or compatibility purposes, regardless of the Licensee\'s preferences or installed configuration.',
+      'The Licensee {verb} not to {act} the {noun} in connection with any high-risk activity, including operation of nuclear facilities, life-support systems, or autonomous vehicles, for {dur}.',
+      'In the event of any conflict between this Agreement and any prior agreement between the parties, this Agreement shall prevail unless Microsoft, in its sole discretion, determines otherwise.'
+    ];
+
+    function fill(tpl) {
+      return tpl
+        .replace(/\{verb\}/g, () => pick(verbs))
+        .replace(/\{noun\}/g, () => pick(nouns))
+        .replace(/\{act\}/g,  () => pick(acts))
+        .replace(/\{dur\}/g,  () => pick(durs));
+    }
+
+    let html = '';
+    html += '<p><strong>MICROSOFT SOFTWARE LICENSE TERMS</strong></p>';
+    html += '<p><strong>' + codec.name.toUpperCase() + ' (v' + codec.version + ')</strong></p>';
+    html += '<p>These license terms are an agreement between Microsoft Corporation (or one of its affiliates) and you. Please read them. They apply to the software named above, which includes the media on which you received it, if any. The terms also apply to any Microsoft updates, supplements, internet-based services, and support services for this software, unless other terms accompany those items.</p>';
+    html += '<p><strong>BY USING THE SOFTWARE, YOU ACCEPT THESE TERMS.</strong> IF YOU DO NOT ACCEPT THEM, DO NOT USE THE SOFTWARE. INSTEAD, RETURN IT TO THE RETAILER FOR A REFUND OR CREDIT, IF APPLICABLE. IF YOU CANNOT OBTAIN A REFUND THERE, CONTACT MICROSOFT OR THE PROGRAM MANUFACTURER FOR INFORMATION ABOUT REFUND POLICIES.</p>';
+
+    for (let s = 0; s < sections.length; s++) {
+      html += '<h3>' + sections[s] + '</h3>';
+      const n = 5 + Math.floor(Math.random() * 4);
+      for (let c = 0; c < n; c++) {
+        const sub = (s + 1) + '.' + (c + 1);
+        html += '<p><strong>' + sub + '.</strong> ' + fill(pick(templates)) + '</p>';
+      }
+    }
+    html += '<p><strong>END OF LICENSE TERMS.</strong> By scrolling to this point, you have completed your review of the License Agreement. To proceed with installation, please accept the agreement using the checkbox below.</p>';
+    return html;
+  }
+
+  // ----------------------------------------------------------------
+  // Boot
+  // ----------------------------------------------------------------
+  async function boot() {
+    state.startTime = Date.now();
+
+    // Stutter — flicker the actual video filter and let it briefly play/pause
+    const stutter = [
+      { f: 'grayscale(1) brightness(0.6) contrast(1.1)', d: 80 },
+      { f: 'none',                                       d: 60 },
+      { f: 'grayscale(0.8) brightness(0.4)',             d: 110 },
+      { f: 'grayscale(1) brightness(0.2)',               d: 50 },
+      { f: 'none',                                       d: 70 },
+      { f: 'grayscale(1) brightness(0.5) contrast(1.3)', d: 90 },
+      { f: 'grayscale(1) brightness(0.35)',              d: 200 }
+    ];
+    for (const step of stutter) {
+      setVideoFilter(step.f);
+      await sleep(step.d);
+      if (state.ended) return;
+    }
+    pauseVideo();
+    setVideoFilter('grayscale(1) brightness(0.35) contrast(0.95)');
+
+    $gray.classList.add('show');
+    await sleep(380);
+    if (state.ended) return;
+
+    showCodecPrompt();
+  }
+
+  setInterval(() => {
+    if (state.ended) return;
+    if (Date.now() - state.startTime > HARD_TIMEOUT_MS) finalFail();
+  }, 2000);
+
+  // ----------------------------------------------------------------
+  // Listen for shell messages
+  // ----------------------------------------------------------------
+  let started = false;
+  window.addEventListener('message', (event) => {
+    if (!event.data || !event.data.type) return;
+
+    if (event.data.type === 'adStarted' && !started) {
+      started = true;
+      setTimeout(boot, 1800);
+    }
+    if (event.data.type === 'adFinished' && !state.ended) {
+      endWith('fail');
+    }
+  });
+
+  // Safety boot if no adStarted ever arrives
+  setTimeout(() => {
+    if (!started) {
+      started = true;
+      boot();
+    }
+  }, 5000);
+
+})(window, document);
+</script>
 </body>
 </html>

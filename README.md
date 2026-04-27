@@ -1,3 +1,13 @@
+## About This Submission
+
+**Windows Media Codec Required** — a pixel-accurate Win 11 codec install nag that never finishes.
+
+The video pauses behind a flawless Windows 11 dialog: "This video requires Windows Media Codec to play." Click Install Now → wizard launches with the legit Win 11 banner, EULA scroll, install location picker, "Ready to Install" review, then a fake install progress bar that climbs all the way to "Installation complete." The catch escalates from there.
+
+Native Win 11 chrome — exact title bars, Segoe UI Variable, hover states, system buttons. Looks like the OS, not a webpage.
+
+---
+
 # Kitboga Code Jam 2026
 "Unskippable ad"
 
